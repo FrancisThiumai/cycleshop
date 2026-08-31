@@ -1,0 +1,33 @@
+{
+  "name": "lecture21-apiandjson",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tailwind": "tailwindcss -i ./views/input.css -o ./public/out.css --watch",
+    "start": "nodemon --delay 1 app.js",
+    "css": "npm run tailwind"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-mongo": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "express-validator": "^7.3.2",
+    "mongodb": "^7.5.0",
+    "mongoose": "^9.7.4"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "autoprefixer": "^10.4.27",
+    "nodemon": "^3.1.11",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2"
+  }
+}

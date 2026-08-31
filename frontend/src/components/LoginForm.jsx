@@ -1,0 +1,65 @@
+import { useState } from "react";
+import Alert from "./Alert";
+
+function LoginForm({ onLogin, onSwitchToSignUp, loading, error }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    onLogin(email, password);
+  };
+
+  return (
+    <main className="grid min-h-screen place-items-center px-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-7 shadow-sm"
+      >
+        <h1 className="text-2xl font-semibold">Cycle Shop</h1>
+        <p className="mt-1 text-sm text-zinc-500">Seller login</p>
+
+        <label className="mt-6 block text-sm font-medium">
+          Email
+          <input
+            className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 outline-none focus:border-zinc-600"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </label>
+
+        <label className="mt-4 block text-sm font-medium">
+          Password
+          <input
+            className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 outline-none focus:border-zinc-600"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </label>
+
+        <Alert variant="error">{error}</Alert>
+
+        <button
+          className="mt-5 w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onSwitchToSignUp}
+          className="mt-3 w-full rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+        >
+          Sign up
+        </button>
+      </form>
+    </main>
+  );
+}
+
+export default LoginForm;
