@@ -62,10 +62,7 @@ function BicycleBuilderPanel({
   useEffect(() => {
     loadModels();
   }, [loadModels]);
-
-  // Live recommended price: hits the backend so it reflects the current
-  // PartModel.currentPrice, not just whatever was in the dropdown when it
-  // was loaded. Recomputes whenever the selection or extras change.
+  
   const loadRecommendedPrice = useCallback(async () => {
     const modelIds = [
       selection.frame,
