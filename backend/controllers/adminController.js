@@ -223,9 +223,6 @@ exports.deleteRow = async (req, res, next) => {
       if (!partInfo) {
         return res.status(404).json({ message: "Not found" });
       }
-      // if (partInfo.saleId) {
-      //   return res.status(409).json({ message: "Cannot delete a part that has already been sold" });
-      // }
       await partInfo.deleteOne();
       return res.json({ message: "Deleted", _id: id });
     }

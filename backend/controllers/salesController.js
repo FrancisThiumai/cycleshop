@@ -4,11 +4,6 @@ const Sale = require("../models/sales");
 const BicycleInfo = require("../models/bicycleInfo");
 const mongoose = require("mongoose");
 
-// Reserves a single unsold PartInfo unit for the given part model, marking it
-// sold at that model's current base price. Used by both the parts-only flow
-// (called once per unit needed) and the bicycle flow (called once per
-// required/misc component). Must run inside the same session/transaction
-// as the rest of the sale so a failed reservation rolls everything back.
 async function reserveOnePart(modelId, saleId, session) {
   const model = await PartModel.findById(modelId).session(session);
 
@@ -26,7 +21,7 @@ async function reserveOnePart(modelId, saleId, session) {
   part.soldPrice = model.currentPrice;
   await part.save({ session });
 
-  return part._id;
+  return { partId: part._id, price: model.currentPrice };
 }
 
 exports.getPartTypes = async (req, res, next) => {
@@ -62,10 +57,7 @@ exports.getModels = async (req, res, next) => {
   }
 };
 
-// Live "recommended price" for a bicycle-in-progress: sums each selected
-// component's *current* base price straight from PartModel, so it always
-// reflects the latest admin edits rather than whatever the browser cached
-// when the dropdowns were first loaded. Any slot not yet picked is skipped.
+
 exports.estimateBicyclePrice = async (req, res, next) => {
   try {
     const { components } = req.body;
@@ -135,15 +127,16 @@ exports.createSale = async (req, res, next) => {
       sale.salePrice = salePrice;
       await sale.save({ session });
 
-      const framePartId = await reserveOnePart(frame, sale._id, session);
-      const gearPartId = await reserveOnePart(gear, sale._id, session);
-      const brakePartId = await reserveOnePart(brake, sale._id, session);
-      const tyre1PartId = await reserveOnePart(tyre1, sale._id, session);
-      const tyre2PartId = await reserveOnePart(tyre2, sale._id, session);
+      const { partId: framePartId } = await reserveOnePart(frame, sale._id, session);
+      const { partId: gearPartId } = await reserveOnePart(gear, sale._id, session);
+      const { partId: brakePartId } = await reserveOnePart(brake, sale._id, session);
+      const { partId: tyre1PartId } = await reserveOnePart(tyre1, sale._id, session);
+      const { partId: tyre2PartId } = await reserveOnePart(tyre2, sale._id, session);
 
       const extraPartIds = [];
       for (const extraModelId of extras) {
-        extraPartIds.push(await reserveOnePart(extraModelId, sale._id, session));
+        const { partId } = await reserveOnePart(extraModelId, sale._id, session);
+        extraPartIds.push(partId);
       }
 
       await BicycleInfo.create(
@@ -162,48 +155,19 @@ exports.createSale = async (req, res, next) => {
       );
     } else {
       const { items } = req.body;
-
-      const total = await (async () => {
-        let sum = 0;
-        for (const item of items) {
-          const model = await PartModel.findById(item.modelId).session(session);
-          if (!model) {
-            throw new Error(`Part model not found: ${item.modelId}`);
-          }
-          sum += model.currentPrice * item.quantity;
-        }
-        return sum;
-      })();
-
-      sale.salePrice = total;
-      await sale.save({ session });
+      let total = 0;
 
       for (const item of items) {
         const { modelId, quantity } = item;
 
-        const model = await PartModel.findById(modelId).session(session);
-
-        if (!model) {
-          throw new Error(`Part model not found: ${modelId}`);
-        }
-
-        const parts = await PartInfo.find({
-          modelId,
-          saleId: null,
-        })
-          .limit(quantity)
-          .session(session);
-
-        if (parts.length < quantity) {
-          throw new Error(`Not enough stock for ${model.modelName}`);
-        }
-
-        for (const part of parts) {
-          part.saleId = sale._id;
-          part.soldPrice = model.currentPrice;
-          await part.save({ session });
+        for (let i = 0; i < quantity; i++) {
+          const { price } = await reserveOnePart(modelId, sale._id, session);
+          total += price;
         }
       }
+
+      sale.salePrice = total;
+      await sale.save({ session });
     }
 
     await session.commitTransaction();
